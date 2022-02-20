@@ -6,7 +6,7 @@ bash/zsh snippets for mkv font adding and extracting
 - mkvmerge
 - mkvpropedit 
 
-###### Snippets
+## Snippets
 
 - fontext
 - fontadd
