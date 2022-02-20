@@ -1,0 +1,56 @@
+#!/bin/bash
+
+fontext(){
+    while getopts ':o:' OPTION; do
+    case "$OPTION" in
+      o) output=$OPTARG;;
+      *) echo "ERROR: Invalid option: -$OPTARG" >&2; return 1;;
+    esac
+  done shift "$((OPTIND - 1))"
+if [ -z "$OPTARG" ]
+  then fontpath="fonts"
+  else fontpath="$OPTARG" fi
+for f in "$@"; do if [[ "$f" != *mkv ]]
+  then continue fi
+  valami=$(mkvmerge --identify "$f" | grep -o "file name.*" | cut -c12- | rev | cut -c2- | rev | grep -e ttf -e otf -e OTF -e TTF)
+  echo "$f"
+l=$(echo "$valami" | wc -l)
+  for x in $( eval echo {1..$l} ); do 
+    font=$(echo "$valami" | sed -n "$x"p)
+    mkvextract "$f" attachments "$x":"$fontpath"/"$font" >/dev/null 2>&1
+  done
+done
+echo $(ls "$fontpath" | wc -l) extracted fonts
+}
+
+addfont(){
+
+    if [[ $# -ne 2 ]]; then
+    echo "ERROR: Not enough arguments" >&2
+    return 1
+  fi
+
+      while getopts ':o:' OPTION; do
+    case "$OPTION" in
+      h) echo "$help"; return 0;;
+      o) output=$OPTARG;;
+      *) echo "ERROR: Invalid option: -$OPTARG" >&2; return 1;;
+    esac
+  done shift "$((OPTIND - 1))"
+if [ -z "$OPTARG" ]
+  then fontpath="fonts"
+  else fontpath="$OPTARG" fi
+
+font=$(printf '%s\n' "$1/"* | grep -e ttf -e otf -e OTF -e TTF) && count=$(echo "$font" | wc -l)
+ex=$(mkvmerge --identify  "$2" | grep -o "file name.*" | cut -c12- | rev | cut -c2- | rev | grep -e ttf -e otf -e OTF -e TTF) && cou=$(echo "$ex" | wc -l)
+sz='0';l='0'
+    for f in $( eval echo {1..$count}); do 
+      if [[ "$ex" =~ $(echo "$font" | sed -n "$f"p | sed "s|"$1"/||g") ]]; 
+      then
+      (( l++ ))
+      else (( sz++ )); mkvpropedit "$2" --add-attachment "$(echo "$font" | sed -n "$f"p)" >/dev/null 2>&1;
+      printf '\r[%s/%s] fonts added' "$sz" "$count";
+    fi
+  done
+printf '\r[%s/%s] fonts added\n%s font(s) already exist in the file' "$sz" "$count" "$l";
+}
