@@ -1,7 +1,7 @@
 #!/bin/bash
 
 fontext(){
-local help output OPTARG f x font p vfont 
+local help output OPTARG f x font p vfont sz l
 help=$(cat <<'EOF'
 Usage:
 fontext [options] [input(s)]
@@ -33,11 +33,14 @@ for f in "$@"; do if [[ "$f" != *mkv ]]
   echo "$f"
 l=$(echo "$vfont" | wc -l)
   for x in $( eval echo {1..$l} ); do 
+    if [-f "$p"/"$font]; then (( l++ ))
+      else
     font=$(echo "$font" | sed -n "$x"p)
     mkvextract "$f" attachments "$x":"$p"/"$font" >/dev/null 2>&1
+   (( sz++ ))
   done
 done
-echo $(ls "$p" | wc -l) extracted fonts
+printf '%s extracted fonts\n%s already exist in the folder' "$sz" "&l"
 }
 
 addfont(){
@@ -58,8 +61,6 @@ addfont(){
   echo "$s"
     font=$(printf '%s\n' "$finput/"* | grep -e ttf -e otf -e OTF -e TTF) && count=$(echo "$font" | wc -l)
     ex=$(mkvmerge --identify  "$s" | grep -o "file name.*" | cut -c12- | rev | cut -c2- | rev | grep -e ttf -e otf -e OTF -e TTF) && cou=$(echo "$ex" | wc -l)
-    sz='0'
-    l='0'
     for f in $( eval echo {1..$count}); do 
         if [[ "$ex" =~ $(echo "$font" | sed -n "$f"p | sed "s|"$finput"/||g") ]]; 
         then
