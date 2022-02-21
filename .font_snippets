@@ -7,14 +7,19 @@ Usage:
 fontext [options] [input(s)]
 Examples:
 fontext input.mkv
-fontext -o newfonts
+fontext *mkv
+fontext -o newfonts input.mkv
 Options:
--o [from fps]       Sets the fonts output.
+-o [fonts output folder]       Sets the fonts output folder.
 (default: fonts/)
 EOF
   )
   
-    while getopts ':o:' OPTION; do
+    if [[ $# -eq 0 ]]; then
+    echo "$help"
+    return 1
+  fi
+    while getopts ':ho:' OPTION; do
     case "$OPTION" in
       h) echo "$help"; return 0;;
       o) output=$OPTARG;;
@@ -22,7 +27,6 @@ EOF
     esac
   done
   shift "$((OPTIND - 1))"
-  local p
   if [ -z "$output" ]
 then p="fonts"
 else p="$output" fi
@@ -32,20 +36,31 @@ for f in "$@"; do if [[ "$f" != *mkv ]]
   vfont=$(mkvmerge --identify "$f" | grep -o "file name.*" | cut -c12- | rev | cut -c2- | rev | grep -e ttf -e otf -e OTF -e TTF)
   echo "$f"
 l=$(echo "$vfont" | wc -l)
-  for x in $( eval echo {1..$l} ); do 
-    if [-f "$p"/"$font]; then (( l++ ))
-      else
+  for x in $( eval echo {1..$l} ); do
+	if [-f "$p"/"$font"]; then (( l++ ))
+	else
     font=$(echo "$font" | sed -n "$x"p)
     mkvextract "$f" attachments "$x":"$p"/"$font" >/dev/null 2>&1
-   (( sz++ ))
+	(( sz++ ))
+	fi
   done
 done
-printf '%s extracted fonts\n%s already exist in the folder' "$sz" "&l"
+echo $(ls "$p" | wc -l) extracted fonts
 }
 
-addfont(){
-  local finput OPTION s font ex count sz l cou
-    while getopts ':f:' OPTION; do
+fontadd(){
+  local finput OPTION s font ex count sz l cou help
+  help=$(cat <<'EOF'
+Usage: fontadd [-f fonts folder/path] video input (*.mkv)
+EOF
+  )
+  
+if [[ $# -eq 0 ]]; then
+    echo "$help"
+    return 1
+  fi
+  
+    while getopts ':hc:' OPTION; do
     case "$OPTION" in
       h) echo "$help"; return 0;;
       f) finput=$OPTARG;;
@@ -61,6 +76,8 @@ addfont(){
   echo "$s"
     font=$(printf '%s\n' "$finput/"* | grep -e ttf -e otf -e OTF -e TTF) && count=$(echo "$font" | wc -l)
     ex=$(mkvmerge --identify  "$s" | grep -o "file name.*" | cut -c12- | rev | cut -c2- | rev | grep -e ttf -e otf -e OTF -e TTF) && cou=$(echo "$ex" | wc -l)
+    sz='0'
+    l='0'
     for f in $( eval echo {1..$count}); do 
         if [[ "$ex" =~ $(echo "$font" | sed -n "$f"p | sed "s|"$finput"/||g") ]]; 
         then
