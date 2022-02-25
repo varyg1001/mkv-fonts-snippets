@@ -1,5 +1,36 @@
 #!/bin/bash
 
+fontadd(){
+local finput OPTION s font ex count sz l cou help
+help='Usage: fontadd [-f fonts folder/path] video input (*.mkv)'
+if [[ $# -eq 0 ]]; then echo "$help";return 1;fi
+while getopts ':hf:' OPTION; do
+	case "$OPTION" in
+      h) echo "$help"; return 0;;
+      f) finput=$OPTARG;;
+      *) echo "ERROR: Invalid option: -$OPTARG" >&2; return 1;;
+    esac
+done;shift "$((OPTIND - 1))"
+if [ ! -d $finput ]; then echo "The fonts directory doesn't exist"; return 1; fi
+if [ ! -f $@ ]; then echo "The video file doesn't exist"; return 1; fi
+echo "$finput"
+l='0';sz='0'
+for s in "$@"; do 
+	if [[ "$s" != *mkv ]]
+	then continue;fi
+	echo "$s"
+    font=$(printf '%s\n' "$finput/"* | grep -e ttf -e otf -e OTF -e TTF) && count=$(echo "$font" | wc -l)
+    ex=$(mkvmerge --identify  "$s" | grep -o "file name.*" | cut -c12- | rev | cut -c2- | rev | grep -e ttf -e otf -e OTF -e TTF) && cou=$(echo "$ex" | wc -l)
+	for f in $( eval echo {1..$count}); do 
+		if [[ "$ex" =~ $(echo "$font" | sed -n "$f"p | sed "s|"$finput"/||g") ]]; 
+		then (( l++ ))
+		else (( sz++ )); mkvpropedit "$s" --add-attachment "$(echo "$font" | sed -n "$f"p)" >/dev/null 2>&1
+		printf '\r[%s/%s] fonts added' "$sz" "$count";fi
+    done
+    printf '\r[%s/%s] fonts added\n%s font(s) already exist in the file\n\n' "$sz" "$count" "$l";
+done
+}
+
 fontext(){
 local help output OPTARG f x font p vfont sz l
 help=$(cat <<'EOF'
@@ -14,78 +45,35 @@ Options:
 (default: fonts/)
 EOF
   )
-  
-    if [[ $# -eq 0 ]]; then
-    echo "$help"
-    return 1
-  fi
-    while getopts ':ho:' OPTION; do
+if [[ $# -eq 0 ]]; then
+echo "$help";return 1;fi
+while getopts ':ho:' OPTION; do
     case "$OPTION" in
       h) echo "$help"; return 0;;
       o) output=$OPTARG;;
       *) echo "ERROR: Invalid option: -$OPTARG" >&2; return 1;;
-    esac
-  done
-  shift "$((OPTIND - 1))"
-  if [ -z "$output" ]
-then p="fonts"
-else p="$output" fi
-for f in "$@"; do if [[ "$f" != *mkv ]]
-  then continue
-  fi
-  vfont=$(mkvmerge --identify "$f" | grep -o "file name.*" | cut -c12- | rev | cut -c2- | rev | grep -e ttf -e otf -e OTF -e TTF)
-  echo "$f"
-l=$(echo "$vfont" | wc -l)
-  for x in $( eval echo {1..$l} ); do
-	if [-f "$p"/"$font"]; then (( l++ ))
-	else
-    font=$(echo "$font" | sed -n "$x"p)
-    mkvextract "$f" attachments "$x":"$p"/"$font" >/dev/null 2>&1
-	(( sz++ ))
-	fi
-  done
+	esac
+done;shift "$((OPTIND - 1))"
+l='0'
+sz='0'
+if [ -z "$output" ]; then p="fonts"
+	else p="$output"; fi
+for f in "$@"; do
+	if [ "$f" != *mkv ];then continue; fi
+	vfont=$(mkvmerge --identify "$f" | grep -o "file name.*" | cut -c12- | rev | cut -c2- | rev | grep -e ttf -e otf -e OTF -e TTF)
+	l=$(echo "$vfont" | wc -l)
+	echo "$f"
+	for x in $( eval echo {1..$l} ); do
+		if [-f "$p"/"$font"]; then (( l++ ))
+		else font=$(echo "$font" | sed -n "$x"p)
+		mkvextract "$f" attachments "$x":"$p"/"$font" >/dev/null 2>&1
+		(( sz++ ));fi
+	done
 done
-echo $(ls "$p" | wc -l) extracted fonts
+printf '%s extracted fonts\n%s already exist in the folder' "$sz" "&l"
 }
 
-fontadd(){
-  local finput OPTION s font ex count sz l cou help
-  help=$(cat <<'EOF'
-Usage: fontadd [-f fonts folder/path] video input (*.mkv)
-EOF
-  )
-  
-if [[ $# -eq 0 ]]; then
-    echo "$help"
-    return 1
-  fi
-  
-    while getopts ':hc:' OPTION; do
-    case "$OPTION" in
-      h) echo "$help"; return 0;;
-      f) finput=$OPTARG;;
-      *) echo "ERROR: Invalid option: -$OPTARG" >&2; return 1;;
-    esac
-  done
-  shift "$((OPTIND - 1))"
-  echo "$finput"
-  for s in "$@"; do 
-  if [[ "$s" != *mkv ]]
-  then continue
-  fi
-  echo "$s"
-    font=$(printf '%s\n' "$finput/"* | grep -e ttf -e otf -e OTF -e TTF) && count=$(echo "$font" | wc -l)
-    ex=$(mkvmerge --identify  "$s" | grep -o "file name.*" | cut -c12- | rev | cut -c2- | rev | grep -e ttf -e otf -e OTF -e TTF) && cou=$(echo "$ex" | wc -l)
-    sz='0'
-    l='0'
-    for f in $( eval echo {1..$count}); do 
-        if [[ "$ex" =~ $(echo "$font" | sed -n "$f"p | sed "s|"$finput"/||g") ]]; 
-        then
-        (( l++ ))
-        else (( sz++ )); mkvpropedit "$s" --add-attachment "$(echo "$font" | sed -n "$f"p)" >/dev/null 2>&1;
-        printf '\r[%s/%s] fonts added' "$sz" "$count";
-      fi
-      done
-      printf '\r[%s/%s] fonts added\n%s font(s) already exist in the file\n\n' "$sz" "$count" "$l";
-    done
+assext(){
+	syle=$(grep 'Style:' $1)
+	echo "$syle" | sed -n '1'p | grep -aob ',' | grep -oE '[0-9]+'
 }
