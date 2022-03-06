@@ -20,14 +20,14 @@ for s in "$@"; do
 	then continue;fi
 	echo "$s"
     font=$(printf '%s\n' "$finput/"* | grep -e ttf -e otf -e OTF -e TTF) && count=$(echo "$font" | wc -l)
-    ex=$(mkvmerge --identify  "$s" | grep -o "file name.*" | cut -c12- | rev | cut -c2- | rev | grep -e ttf -e otf -e OTF -e TTF) && cou=$(echo "$ex" | wc -l)
+    ex=$(mkvmerge --identify  "$s" | grep -o "file name.*" | cut -c12- | rev | cut -c2- | rev | grep -i -e .ttf -e .otf) && cou=$(echo "$ex" | wc -l)
 	for f in $( eval echo {1..$count}); do 
 		if [[ "$ex" =~ $(echo "$font" | sed -n "$f"p | sed "s|"$finput"/||g") ]]; 
 		then (( l++ ))
 		else (( sz++ )); mkvpropedit "$s" --add-attachment "$(echo "$font" | sed -n "$f"p)" >/dev/null 2>&1
 		printf '\r[%s/%s] fonts added' "$sz" "$count";fi
     done
-    printf '\r[%s/%s] fonts added\n%s font(s) already exist in the file\n\n' "$sz" "$count" "$l";
+    printf '\r[%s/%s] fonts added\n%s font(s) exist in the file' "$sz" "$count" "$l";
 done
 }
 
@@ -59,7 +59,7 @@ if [[ -z "$output" ]]; then p="fonts"
 for f in "$@"; do
 	k='0';sz='0'
 	if [[ "$f" != *mkv ]];then continue; fi
-	vfont=$(mkvmerge --identify "$f" | grep -o "file name.*" | cut -c12- | rev | cut -c2- | rev | grep -e ttf -e otf -e OTF -e TTF)
+	vfont=$(mkvmerge --identify "$f" | grep -o "file name.*" | cut -c12- | rev | cut -c2- | rev | grep -i -e .ttf -e .otf)
 	l=$(echo "$vfont" | wc -l)
 	echo "$f"
 	for x in $( eval echo {1..$l} ); do
@@ -68,6 +68,6 @@ for f in "$@"; do
 		else mkvextract "$f" attachments "$x":"$p"/"$font" >/dev/null 2>&1
 		(( sz++ ));fi
 	done
+	printf '%s extracted fonts\n%s already exist in the folder\n\n' "$sz" "$k"
 done
-printf '%s extracted fonts\n%s already exist in the folder' "$sz" "$k"
 }
