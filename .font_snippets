@@ -3,7 +3,7 @@
 mkvfadd(){
 local finput OPTION s font ex count sz l cou help b
 help='Usage: fontadd [-f fonts folder/path] video input (*.mkv)'
-if [[ $# -eq 0 ]]; then echo "$help";return 1;fi
+if [[ $# -eq 0 ]]; then echo "$help"; return 1 ;fi
 while getopts ':hf:' OPTION; do
 	case "$OPTION" in
       h) echo "$help"; return 0;;
