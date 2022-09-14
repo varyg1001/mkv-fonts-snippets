@@ -1,5 +1,5 @@
 # Small description
-snippets for fonts adding and extracting from mkv
+snippets for fonts auto adding and extracting from mkv
 
 ## Requirements
 - mkvmerge
