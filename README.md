@@ -12,4 +12,4 @@ Snippets for fonts auto adding and extracting from mkv.
 
 
 ## Help
-Add your `~/.zshrc` or `~/.bashrc` file this: `source /your path/.mkv-fonts-snippets` line
+Add your `~/.zshrc` or `~/.bashrc` file, this: `source /your path/.mkv-fonts-snippets` line
