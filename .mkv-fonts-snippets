@@ -3,18 +3,26 @@
 mkvfadd(){
 local finput OPTION s font ex count sz l cou help b
 help='Usage: fontadd [-f fonts folder/path] video input (*.mkv)'
-if [[ $# -lt 1 ]]; then echo "$help";return 1;fi
+# options
+if [[ $# -lt 1 ]]; then echo "$help"; return 1;fi
 while getopts ':hf:' OPTION; do
 	case "$OPTION" in
       h) echo "$help"; return 0;;
       f) finput=$OPTARG;;
       *) echo "ERROR: Invalid option: -$OPTARG" >&2; return 1;;
     esac
-done;shift "$((OPTIND - 1))"
+done
+
+shift "$((OPTIND - 1))"
+
+# tests
 if [[ ! -d "$finput" ]]; then printf '\e[91m%s\e[0m\n' "The fonts directory doesn't exist"; return 1; fi
 if [[ -z "$(ls "$finput")" ]]; then printf '\e[91m%s\e[0m\n' "The font folder is empty!"; return 1; fi
 if [[ -z "$(ls "$finput" | grep -i -e .ttf -e .otf)" ]]; then printf '\e[91m%s\e[0m\n' "The font folder doesn't containe any font files!"; return 1; fi
+
 printf '\nFonts folder: \e[94m%s\e[0m\n' "$finput"
+
+#fonts adding
 for s in "$@"; do 
 	if [[ ! -f "$s" ]]; then printf '\e[91m%s\e[0m\n' "The video file doesn't exist"; return 1; fi
 	l='0';sz='0'
@@ -24,6 +32,7 @@ for s in "$@"; do
 	printf 'File name: \e[92m%s\e[0m\n' "$b"
     font=$(printf '%s\n' "$finput/"* | grep -i -e .ttf -e .otf) && count=$(echo "$font" | wc -l)
     ex=$(mkvmerge --identify  "$s" | grep -o "file name.*" | cut -c12- | rev | cut -c2- | rev | grep -i -e .ttf -e .otf) && cou=$(echo "$ex" | wc -l)
+
 	for f in $( eval echo {1..$count}); do 
 		b=$(basename "$(echo "$font" | sed -n "$f"p)")
 		if [[ "$ex" =~ $(echo "$font" | sed -n "$f"p | sed "s|$finput/||g") ]]; 
@@ -32,6 +41,7 @@ for s in "$@"; do
 		printf '\r'
 		printf '\r[%s/%s] fonts added: %s' "$sz" "$count" "$b";fi
     done
+
 	printf '\r'
     printf '\r[%s/%s] fonts added\n%s font(s) exist in the file\n' "$sz" "$count" "$l";
 done
@@ -51,17 +61,22 @@ Options:
 (default: fonts/)
 EOF
   )
-if [[ $# -lt 1 ]]; then
-echo "$help";return 1;fi
+if [[ $# -lt 1 ]]; then echo "$help"; return 1;fi
+
+# options
 while getopts ':ho:' OPTION; do
     case "$OPTION" in
       h) echo "$help"; return 0;;
       o) output=$OPTARG;;
       *) echo "ERROR: Invalid option: -$OPTARG" >&2; return 1;;
 	esac
-done;shift "$((OPTIND - 1))"
-if [[ -z "$output" ]]; then p="fonts"
-	else p="$output"; fi
+done
+
+shift "$((OPTIND - 1))"
+
+if [[ -z "$output" ]]; then p="fonts"; else p="$output"; fi
+
+# extracting
 for font_name in "$@"; do
 if [[ ! -f "$font_name" ]]; then printf '\e[91m%s\e[0m\n' "The video file doesn't exist"; return 1; fi
 	k='0';sz='0'
@@ -69,12 +84,14 @@ if [[ ! -f "$font_name" ]]; then printf '\e[91m%s\e[0m\n' "The video file doesn'
 	vfont=$(mkvmerge --identify "$font_name" | grep -o "file name.*" | cut -c12- | rev | cut -c2- | rev | grep -i -e .ttf -e .otf)
 	file_name=$(basename "$font_name")
 	printf '\nFile name: \e[92m%s\e[0m\n' "$file_name"
+
 	for x in $( eval echo {1..$(echo "$vfont" | wc -l)} ); do
 		font=$(echo "$vfont" | sed -n "$x"p)
 		if [ -f "$p"/"$font" ]; then (( k++ ))
 		else mkvextract "$font_name" attachments "$x":"$p"/"$font" >/dev/null 2>&1
 		(( sz++ ));fi
 	done
+
 	printf '%s extracted fonts\n%s exist in the folder\n' "$sz" "$k"
 done
 }
