@@ -1,5 +1,5 @@
-# fonts-add-extract-snippets
-bash/zsh snippets for mkv files font adding and extracting
+# mkv fonts add and extract snippets
+bash/zsh snippets for mkv fonts adding and extracting
 
 ## Requirements
 - mkvmerge
@@ -7,5 +7,5 @@ bash/zsh snippets for mkv files font adding and extracting
 - mkvextract
 
 ## Snippets
-- fontext
-- fontadd
+- mkvfadd
+- mkvfex
