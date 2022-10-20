@@ -1,7 +1,7 @@
 #!/bin/bash
 
 mkvfadd(){
-local finput OPTION s font ex count sz l cou help b
+local finput OPTION s font ex count sz l cou help b del
 help='Usage: fontadd [-f fonts folder/path] video input (*.mkv)'
 # options
 if [[ $# -lt 1 ]]; then echo "$help"; return 1;fi
@@ -27,7 +27,8 @@ for s in "$@"; do
 	if [[ ! -f "$s" ]]; then printf '\e[91m%s\e[0m\n' "The video file doesn't exist"; return 1; fi
 	l='0';sz='0'
 	if [[ "$s" != *mkv ]]
-	then continue;fi
+	then continue
+	fi
 	b=$(basename "$s")
 	printf 'File name: \e[92m%s\e[0m\n' "$b"
     font=$(printf '%s\n' "$finput/"* | grep -i -e .ttf -e .otf) && count=$(echo "$font" | wc -l)
@@ -35,17 +36,18 @@ for s in "$@"; do
 
 	for f in $( eval echo {1..$count}); do 
 		b=$(basename "$(echo "$font" | sed -n "$f"p)")
-		if [[ "$ex" =~ $(echo "$font" | sed -n "$f"p | sed "s|$finput/||g") ]]; 
+		if [[ "$ex" =~ $(echo "$font" | sed -n "$f"p | sed "s|$finput/||g") ]]
 		then (( l++ ))
-		else (( sz++ )); mkvpropedit "$s" --add-attachment "$(echo "$font" | sed -n "$f"p)" >/dev/null 2>&1
-		printf '\r'
-		printf '\r[%s/%s] fonts added: %s' "$sz" "$count" "$b";fi
+		else (( sz++ ))
+		printf '\r[%s/%s] fonts added: %s' "$sz" "$count" "$b"
+		mkvpropedit "$s" --add-attachment "$(echo "$font" | sed -n "$f"p)" >/dev/null 2>&1
+		printf '\r[%s/%s] fonts added\e[30m: %s\e[0m' "$sz" "$count" "$b"
+		fi
     done
-
-	printf '\r'
     printf '\r[%s/%s] fonts added\n%s font(s) exist in the file\n' "$sz" "$count" "$l";
 done
 }
+
 
 mkvfex(){
 local help output OPTARG f x font p vfont sz l k b
